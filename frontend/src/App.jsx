@@ -5,10 +5,15 @@ import Dashboard from "./pages/Dashboard";
 import { useState } from "react";
 import { useEffect } from "react";
 import { getCurrentUser } from "./apis/user.api";
+import Scorer from "./pages/Scorer";
+import { getResume } from "./apis/resume.api";
+import { useDispatch } from "react-redux";
+import { setResume } from "./redux/resumeSlice";
 
 const App = () => {
   const [user, setuser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch()
 
   useEffect(() => {
    const getUser = async () => {
@@ -22,6 +27,15 @@ const App = () => {
     }
    }
    getUser()
+  }, []);
+
+
+  useEffect(() => {
+    const getResumeData = async () => {
+        const result = await getResume()
+        dispatch(setResume(result.data))
+    }
+    getResumeData()
   }, []);
 
   if (loading) {
@@ -51,6 +65,17 @@ const App = () => {
           element={
             user ? (
               <Dashboard user={user} setUser={setuser} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+
+        <Route
+          path="/scorer"
+          element={
+            user ? (
+              <Scorer user={user} setUser={setuser} />
             ) : (
               <Navigate to="/" replace />
             )
