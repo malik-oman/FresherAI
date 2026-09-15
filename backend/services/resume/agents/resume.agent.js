@@ -44,13 +44,14 @@ Response Format:
   "projects":[],
   "education":[],
   "experience":[],
-  "strengths":[],
-  "weaknesses":[],
+  "strength":[],
+  "weakness":[],
   "missingSkills":[],
   "suggestedRole":"",
   "score":0,
-  "recommendations":[]
+  "recommendation":[]
 }
+
 `),
 new HumanMessage(resumeText),
   ]);

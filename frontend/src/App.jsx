@@ -9,33 +9,33 @@ import Scorer from "./pages/Scorer";
 import { getResume } from "./apis/resume.api";
 import { useDispatch } from "react-redux";
 import { setResume } from "./redux/resumeSlice";
+import ResumeBuilder from "./pages/ResumeBuilder";
 
 const App = () => {
   const [user, setuser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
 
   useEffect(() => {
-   const getUser = async () => {
-    try {
-      const data = await getCurrentUser()
-      setuser(data.user)
-    } catch (error) {
-      setuser(null)
-    }finally{
-      setLoading(false)
-    }
-   }
-   getUser()
+    const getUser = async () => {
+      try {
+        const data = await getCurrentUser();
+        setuser(data.user);
+      } catch (error) {
+        setuser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    getUser();
   }, []);
-
 
   useEffect(() => {
     const getResumeData = async () => {
-        const result = await getResume()
-        dispatch(setResume(result.data))
-    }
-    getResumeData()
+      const result = await getResume();
+      dispatch(setResume(result?.data));
+    };
+    getResumeData();
   }, []);
 
   if (loading) {
@@ -59,7 +59,7 @@ const App = () => {
             )
           }
         />
-        
+
         <Route
           path="/dashboard"
           element={
@@ -82,6 +82,16 @@ const App = () => {
           }
         />
 
+        <Route
+          path="/resume"
+          element={
+            user ? (
+              <ResumeBuilder user={user} setUser={setuser} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
       </Routes>
     </>
   );
