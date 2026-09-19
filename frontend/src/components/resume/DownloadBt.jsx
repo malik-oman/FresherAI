@@ -1,24 +1,42 @@
-import React from 'react'
-import { FiDownload } from 'react-icons/fi'
-import {useReactToPrint} from "react-to-print"
+import React from "react";
+import { FiDownload } from "react-icons/fi";
+import { useReactToPrint } from "react-to-print";
+import { useCoins } from "../../apis/user.api";
 
-const DownloadBt = ({docRef,user,setUser}) => {
-
+const DownloadBt = ({ docRef, user, setUser }) => {
   const handlePdf = useReactToPrint({
-    contentRef:docRef,
-    documentTitle:"FresherAIPDF"
-  }) 
+    contentRef: docRef,
+    documentTitle: "FresherAIPDF",
+  });
 
   const handleDownload = async () => {
-    handlePdf()
-  }
+    try {
+      const coinResponse = await useCoins({
+        coins: 10,
+        action: "resume-builder",
+      });
+      setUser((prev) => ({
+        ...prev,
+        interviewCoin: coinResponse?.interviewCoin,
+      }));
+      handlePdf();
+    } catch (error) {
+      if (error.response?.status === 403) {
+        return alert("Not enough Interview Coins.");
+      }
+      alert(error.response?.data?.message || "Something Went Wrong");
+    }
+  };
 
   return (
-    <button onClick={handleDownload} className='flex items-center gap-2 rounded-lg bg-black px-3 py-2 text-xs text-white'>
-      <FiDownload/>
+    <button
+      onClick={handleDownload}
+      className="flex items-center gap-2 rounded-lg bg-black px-3 py-2 text-xs text-white"
+    >
+      <FiDownload />
       Download PDF
     </button>
-  )
-}
+  );
+};
 
-export default DownloadBt
+export default DownloadBt;

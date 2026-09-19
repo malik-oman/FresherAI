@@ -10,6 +10,9 @@ import { getResume } from "./apis/resume.api";
 import { useDispatch } from "react-redux";
 import { setResume } from "./redux/resumeSlice";
 import ResumeBuilder from "./pages/ResumeBuilder";
+import StartInterview from "./pages/StartInterview";
+import PageInterview from "./pages/PageInterview";
+import ReportInterview from "./pages/ReportInterview";
 
 const App = () => {
   const [user, setuser] = useState(null);
@@ -87,6 +90,39 @@ const App = () => {
           element={
             user ? (
               <ResumeBuilder user={user} setUser={setuser} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+
+        <Route
+          path="/interview"
+          element={
+            user ? (
+              <StartInterview user={user} setUser={setuser} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+
+        <Route
+          path="/interview/:id"
+          element={
+            user ? (
+              <PageInterview user={user} setUser={setuser} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+
+        <Route
+          path="/interview/:id/report"
+          element={
+            user ? (
+              <ReportInterview user={user} setUser={setuser} />
             ) : (
               <Navigate to="/" replace />
             )
