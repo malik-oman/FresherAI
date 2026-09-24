@@ -34,10 +34,18 @@ const Step1setup = ({ user, setUser }) => {
       }
       try {
         setUploading(true);
-        const coinResponse = await useCoins({coins:10, action:"resume-scorer"})
+        try { 
+           const coinResponse = await useCoins({coins:10, action:"resume-scorer"})
         setUser((prev)=>({
           ...prev, interviewCoin:coinResponse?.interviewCoin
         }))
+          
+        } catch (error) {
+          setUploading(false)
+           alert("Failed to use coins.")
+           return
+        }
+      
         const formData = new FormData();
         formData.append("resume", file);
   
@@ -52,15 +60,22 @@ const Step1setup = ({ user, setUser }) => {
       }
     };
 
-
+// ===================================================START INTERVIEW======================
     const start = async () => {
       setStarting(true)
       const response = await startInterview({role,type,useResume,resume})
       if (response) {
-         const coinResponse = await useCoins({coins:50, action:"start-interview"})
+        try {
+            const coinResponse = await useCoins({coins:50, action:"start-interview"})
         setUser((prev)=>({
           ...prev, interviewCoin:coinResponse?.interviewCoin
         }))
+        } catch (error) {
+           setStarting(false)
+           alert("Failed to use coins.")
+           return
+
+        }
       }
       setStarting(false)
       navigate(`/interview/${response.interviewId}`)

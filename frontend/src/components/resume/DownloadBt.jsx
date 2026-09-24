@@ -13,13 +13,14 @@ const DownloadBt = ({ docRef, user, setUser }) => {
     try {
       const coinResponse = await useCoins({
         coins: 10,
-        action: "resume-builder",
+        action: "download-pdf",
       });
+      await handlePdf()
       setUser((prev) => ({
         ...prev,
         interviewCoin: coinResponse?.interviewCoin,
       }));
-      handlePdf();
+
     } catch (error) {
       if (error.response?.status === 403) {
         return alert("Not enough Interview Coins.");

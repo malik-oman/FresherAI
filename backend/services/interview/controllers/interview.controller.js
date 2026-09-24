@@ -113,6 +113,7 @@ export const submitAnswer = async (req, res) => {
       type: interview.type,
 
       questions: interview.questions,
+
     });
 
     currentQuestion.feedback = result.feedback;
@@ -138,6 +139,7 @@ export const submitAnswer = async (req, res) => {
         success: true,
         completed: true,
         interview,
+        feedback: result.feedback
       });
     }
 
@@ -146,7 +148,7 @@ export const submitAnswer = async (req, res) => {
       success: true,
       completed: false,
       currentQuestion: interview.currentQuestion,
-
+        totalQuestions: interview.questions.length, 
       question: interview.questions[interview.currentQuestion],
       feedback: result.feedback,
     });
