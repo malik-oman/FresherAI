@@ -31,3 +31,12 @@ export const submitAnswer = async (data) => {
     return null;
   }
 }
+export const getAllInterview = async () => {
+  try {
+    const response = await api.get(`/api/interview/all`);
+    return response.data;
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+}

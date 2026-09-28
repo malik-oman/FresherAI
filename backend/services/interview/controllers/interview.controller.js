@@ -1,3 +1,4 @@
+import redis from "../../../shared/redis/redis.js";
 import graph from "../graph/graph.js";
 import Interview from "./../models/interview.model.js";
 
@@ -37,6 +38,8 @@ export const startInterview = async (req, res) => {
       currentQuestion: 0,
       status: "in-progress",
     });
+
+    await redis.del(`interviews:${userId}`)
 
     return res.status(200).json({
       success: true,
@@ -113,7 +116,6 @@ export const submitAnswer = async (req, res) => {
       type: interview.type,
 
       questions: interview.questions,
-
     });
 
     currentQuestion.feedback = result.feedback;
@@ -134,12 +136,13 @@ export const submitAnswer = async (req, res) => {
       interview.recommendations = result.report.recommendations;
 
       await interview.save();
+       await redis.del(`interviews:${userId}`)
 
       return res.status(200).json({
         success: true,
         completed: true,
         interview,
-        feedback: result.feedback
+        feedback: result.feedback,
       });
     }
 
@@ -148,7 +151,7 @@ export const submitAnswer = async (req, res) => {
       success: true,
       completed: false,
       currentQuestion: interview.currentQuestion,
-        totalQuestions: interview.questions.length, 
+      totalQuestions: interview.questions.length,
       question: interview.questions[interview.currentQuestion],
       feedback: result.feedback,
     });
@@ -189,3 +192,127 @@ export const getinterview = async (req, res) => {
     });
   }
 };
+
+// ===============================GET ALL INTERVIEWS===========================
+export const getAllInterviews = async (req, res) => {
+  try {
+    const userId = req.headers["x-user-id"];
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing x-user-id header",
+      });
+    }
+
+    const cache = await redis.get(`interviews:${userId}`);
+    if (cache) {
+      console.log("Data Served from Redis");
+      return res.status(200).json(JSON.parse(cache));
+    }
+
+    const interviews = await Interview.find({ userId }).sort({ createdAt: -1 });
+    const completed = interviews.filter((item) => item.status === "completed");
+    const totalQuestions = interviews.reduce(
+      (sum, item) => sum + item.questions.length,
+      0,
+    );
+    const averageScore =
+      completed.length > 0
+        ? Number(
+            completed.reduce((sum, item) => sum + item.overallScore, 0) /
+              completed.length,
+          ).toFixed(1)
+        : 0;
+
+    const stats = {
+      totalInterviews: interviews.length,
+      totalQuestions,
+      completed: completed.length,
+      averageScore,
+    };
+
+    const emptySkillData = [
+      { skill: "Correctness", score: 0 },
+      { skill: "Clarity", score: 0 },
+      { skill: "Relevance", score: 0 },
+      { skill: "Detail", score: 0 },
+      { skill: "Efficiency", score: 0 },
+      { skill: "Communication", score: 0 },
+      { skill: "Problem Solving", score: 0 },
+      { skill: "Creativity", score: 0 },
+    ];
+
+    const getAverageData = (list) => {
+      if (!list.length) return emptySkillData;
+
+      const total = {
+        correctness: 0,
+        clarity: 0,
+        relevance: 0,
+        detail: 0,
+        efficiency: 0,
+        communication: 0,
+        problemSolving: 0,
+        creativity: 0,
+      };
+
+      list.forEach((interview) => {
+        interview.questions.forEach((q) => {
+          total.correctness += q.feedback.correctness || 0;
+          total.clarity += q.feedback.clarity || 0;
+          total.relevance += q.feedback.relevance || 0;
+          total.detail += q.feedback.detail || 0;
+          total.efficiency += q.feedback.efficiency || 0;
+          total.communication += q.feedback.communication || 0;
+          total.problemSolving += q.feedback.problemSolving || 0;
+          total.creativity += q.feedback.creativity || 0;
+        });
+      });
+
+      const count = list.reduce((sum, item) => sum + item.questions.length, 0);
+      if (count === 0) return emptySkillData;
+
+      return [
+        { skill: "Correctness", score: Math.round(total.correctness / count) },
+        { skill: "Clarity", score: Math.round(total.clarity / count) },
+        { skill: "Relevance", score: Math.round(total.relevance / count) },
+        { skill: "Detail", score: Math.round(total.detail / count) },
+        { skill: "Efficiency", score: Math.round(total.efficiency / count) },
+        { skill: "Communication", score: Math.round(total.communication / count) },
+        { skill: "Problem Solving", score: Math.round(total.problemSolving / count) },
+        { skill: "Creativity", score: Math.round(total.creativity / count) },
+      ];
+    };
+
+    const technicalInterviews = completed.filter((item) => item.type === "technical");
+    const hrInterviews = completed.filter((item) => item.type === "hr");
+
+    const technicalData = getAverageData(technicalInterviews);
+    const hrData = getAverageData(hrInterviews);
+
+    const technicalCount = technicalInterviews.length;
+    const hrCount = hrInterviews.length;
+
+    const payload = {
+      success: true,
+      interviews,
+      stats,
+      technicalData,
+      hrData,
+      technicalCount,
+      hrCount,
+    };
+
+    await redis.set(`interviews:${userId}`, JSON.stringify(payload), "EX", 600);
+
+    return res.status(200).json(payload);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
